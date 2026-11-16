@@ -1,0 +1,87 @@
+:root {
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Noto Sans', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'DejaVu Sans Mono', Menlo, monospace;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-xxl: 26px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --control-h: 30px;
+  --toolbar-h: 52px;
+
+  --bg-app: #eef0f3;
+  --bg-panel: #f8f9fb;
+  --bg-surface: #ffffff;
+  --bg-canvas: #e3e6eb;
+  --bg-hover: rgba(20, 30, 50, 0.06);
+  --bg-active: rgba(20, 30, 50, 0.1);
+  --border: #dadde3;
+  --border-strong: #b9bec8;
+  --text: #1b2130;
+  --text-muted: #555e6e;
+  --text-faint: #6f7786;
+  --accent: #2c5bd0;
+  --accent-hover: #234cb4;
+  --accent-soft: #e5ecfb;
+  --accent-text: #ffffff;
+  --accent-ink: #1f4bb8;
+  --danger: #b8322a;
+  --danger-soft: #fcebe9;
+  --warn: #8f5600;
+  --warn-soft: #fff3dc;
+  --success: #1f7a45;
+  --success-soft: #e3f4ea;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.08);
+  --shadow: 0 4px 16px rgba(16, 24, 40, 0.12), 0 1px 3px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 16px 48px rgba(16, 24, 40, 0.22);
+  --slide-shadow: 0 2px 10px rgba(16, 24, 40, 0.14);
+  --focus-ring: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--accent);
+  --scrim: rgba(20, 25, 35, 0.38);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-app: #1b1d22;
+    --bg-panel: #212328;
+    --bg-surface: #2a2d33;
+    --bg-canvas: #141519;
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --bg-active: rgba(255, 255, 255, 0.11);
+    --border: #383b43;
+    --border-strong: #50545e;
+    --text: #e7e9ee;
+    --text-muted: #a8aebb;
+    --text-faint: #8d93a0;
+    --accent: #5f8cf0;
+    --accent-hover: #7aa0f5;
+    --accent-soft: #263452;
+    --accent-text: #0e1424;
+    --accent-ink: #9db8f7;
+    --danger: #f0786f;
+    --danger-soft: #3d2322;
+    --warn: #f0b45a;
+    --warn-soft: #3a2e19;
+    --success: #6fcf97;
+    --success-soft: #1d3426;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+    --slide-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+    --scrim: rgba(0, 0, 0, 0.55);
+    color-scheme: dark;
+  }
+}

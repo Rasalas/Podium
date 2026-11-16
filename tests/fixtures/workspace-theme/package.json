@@ -1,0 +1,5 @@
+{
+  "name": "workspace-theme-fixture",
+  "private": true,
+  "workspaces": ["packages/*"]
+}

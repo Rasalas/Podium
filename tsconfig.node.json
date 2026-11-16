@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "lib": [
+      "ES2023"
+    ],
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src/main/**/*",
+    "src/preload/**/*",
+    "src/shared/**/*",
+    "tests/unit/**/*",
+    "tests/harness/**/*",
+    "electron.vite.config.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": [
+    "tests/unit/renderer/**/*"
+  ]
+}

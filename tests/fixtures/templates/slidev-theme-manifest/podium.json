@@ -1,0 +1,22 @@
+{
+  "label": { "de": "Beispielvorlage", "en": "Sample template" },
+  "description": { "de": "Nur zum Testen.", "en": "For tests only." },
+  "colors": { "background": "#000000", "foreground": "#ffffff", "accent": "#ff0000" },
+  "starter": "starter.md",
+  "layouts": {
+    "cover": {
+      "label": { "de": "Eigener Titel", "en": "Custom title" },
+      "category": "special",
+      "sketch": "center",
+      "slots": [{ "name": "default", "label": { "de": "Titel", "en": "Title" } }],
+      "fields": [{ "key": "logo", "type": "image", "label": { "de": "Logo", "en": "Logo" } }],
+      "starter": { "de": "# Mein Titel", "en": "# My title" }
+    },
+    "cards": {
+      "label": "Karten",
+      "description": "Karten nebeneinander",
+      "category": "content",
+      "hidden": true
+    }
+  }
+}

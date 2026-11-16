@@ -1,0 +1,27 @@
+{
+  "name": "slidev-theme-klar",
+  "version": "0.1.0",
+  "description": "Klar: a calm, high-contrast Slidev theme for talks and lectures. Works offline.",
+  "license": "MIT",
+  "keywords": [
+    "slidev-theme",
+    "slidev"
+  ],
+  "engines": {
+    "slidev": ">=v0.47.0"
+  },
+  "slidev": {
+    "colorSchema": "both",
+    "defaults": {
+      "fonts": {
+        "provider": "none",
+        "webfonts": [],
+        "sans": "Segoe UI Variable Text, Segoe UI, SF Pro Text, Helvetica Neue, Inter, Noto Sans",
+        "serif": "Georgia",
+        "mono": "Cascadia Code, SF Mono, Consolas, Liberation Mono",
+        "weights": "400,600,700"
+      },
+      "transition": "fade"
+    }
+  }
+}

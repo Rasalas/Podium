@@ -1,0 +1,135 @@
+{
+  "label": { "de": "Klar", "en": "Clear" },
+  "description": {
+    "de": "Ruhig, kontrastreich, mit einer Akzentfarbe. Für Vorträge und Vorlesungen.",
+    "en": "Calm, high contrast, with one accent colour. For talks and lectures."
+  },
+  "colors": { "background": "#fbfbf9", "foreground": "#15181e", "accent": "#2459d3" },
+  "starter": "starter.md",
+  "layouts": {
+    "cover": {
+      "label": { "de": "Titelfolie", "en": "Title slide" },
+      "description": { "de": "Der Einstieg: Titel, Untertitel und Name.", "en": "The opening: title, subtitle and name." },
+      "category": "title",
+      "sketch": "cover",
+      "slots": [{ "name": "default", "label": { "de": "Titel und Untertitel", "en": "Title and subtitle" } }],
+      "fields": [
+        { "key": "background", "type": "image", "label": { "de": "Hintergrundbild", "en": "Background image" }, "description": { "de": "Optional. Der Text wird dann weiß.", "en": "Optional. The text turns white." } }
+      ],
+      "starter": { "de": "# Titel des Vortrags\n\nUntertitel\n\nName · Datum", "en": "# Title of the talk\n\nSubtitle\n\nName · Date" }
+    },
+    "default": {
+      "label": { "de": "Titel und Inhalt", "en": "Title and content" },
+      "description": { "de": "Überschrift mit Text oder Aufzählung.", "en": "Heading with text or a list." },
+      "category": "content",
+      "sketch": "title-body",
+      "slots": [{ "name": "default", "label": { "de": "Inhalt", "en": "Content" } }],
+      "fields": [{ "key": "class", "type": "text", "label": { "de": "Eigene Formatierung", "en": "Custom style" } }],
+      "starter": { "de": "# Überschrift\n\n- Erster Punkt\n- Zweiter Punkt\n- Dritter Punkt", "en": "# Heading\n\n- First point\n- Second point\n- Third point" }
+    },
+    "title-only": {
+      "label": { "de": "Nur Titel", "en": "Title only" },
+      "description": { "de": "Überschrift mit viel freier Fläche, etwa für ein Diagramm oder Bild.", "en": "A heading with lots of free space, for example for a chart or picture." },
+      "category": "content",
+      "sketch": "title-body",
+      "slots": [{ "name": "default", "label": { "de": "Titel und freie Fläche", "en": "Title and free space" } }],
+      "fields": [],
+      "starter": { "de": "# Überschrift", "en": "# Heading" }
+    },
+    "section": {
+      "label": { "de": "Abschnitt", "en": "Section" },
+      "description": { "de": "Farbige Trennfolie zwischen zwei Teilen.", "en": "Coloured divider between two parts." },
+      "category": "title",
+      "sketch": "section",
+      "slots": [{ "name": "default", "label": { "de": "Abschnittstitel", "en": "Section title" } }],
+      "fields": [],
+      "starter": { "de": "# Neuer Abschnitt\n\nKurze Beschreibung", "en": "# New section\n\nShort description" }
+    },
+    "two-cols": {
+      "label": { "de": "Zwei Spalten", "en": "Two columns" },
+      "description": { "de": "Zwei Inhalte nebeneinander, zum Beispiel zum Vergleichen.", "en": "Two contents side by side, for example to compare." },
+      "category": "content",
+      "sketch": "two-cols",
+      "slots": [
+        { "name": "default", "label": { "de": "Links", "en": "Left" } },
+        { "name": "right", "label": { "de": "Rechts", "en": "Right" } }
+      ],
+      "fields": [],
+      "starter": { "de": "# Links\n\n- Punkt\n- Punkt\n\n::right::\n\n# Rechts\n\n- Punkt\n- Punkt", "en": "# Left\n\n- Point\n- Point\n\n::right::\n\n# Right\n\n- Point\n- Point" }
+    },
+    "two-cols-header": {
+      "label": { "de": "Zwei Spalten mit Titel", "en": "Two columns with title" },
+      "description": { "de": "Eine Überschrift über zwei Spalten.", "en": "One heading above two columns." },
+      "category": "content",
+      "sketch": "two-cols-header",
+      "slots": [
+        { "name": "default", "label": { "de": "Titel", "en": "Title" } },
+        { "name": "left", "label": { "de": "Links", "en": "Left" } },
+        { "name": "right", "label": { "de": "Rechts", "en": "Right" } },
+        { "name": "bottom", "label": { "de": "Unten", "en": "Bottom" } }
+      ],
+      "fields": [],
+      "starter": { "de": "# Überschrift\n\n::left::\n\n### Links\n\nText oder Aufzählung\n\n::right::\n\n### Rechts\n\nText oder Aufzählung", "en": "# Heading\n\n::left::\n\n### Left\n\nText or list\n\n::right::\n\n### Right\n\nText or list" }
+    },
+    "image-left": {
+      "label": { "de": "Bild links", "en": "Image left" },
+      "description": { "de": "Links ein Bild, rechts Text.", "en": "Image on the left, text on the right." },
+      "category": "media",
+      "sketch": "image-left",
+      "slots": [{ "name": "default", "label": { "de": "Text", "en": "Text" } }],
+      "fields": [
+        { "key": "image", "type": "image", "label": { "de": "Bild", "en": "Image" } },
+        { "key": "backgroundSize", "type": "select", "label": { "de": "Bildausschnitt", "en": "Image fit" }, "default": "cover", "options": [{ "value": "cover", "label": { "de": "Füllen", "en": "Fill" } }, { "value": "contain", "label": { "de": "Ganz zeigen", "en": "Show whole image" } }] }
+      ],
+      "starter": { "de": "# Überschrift\n\nText zum Bild.", "en": "# Heading\n\nText about the picture." }
+    },
+    "image-right": {
+      "label": { "de": "Bild rechts", "en": "Image right" },
+      "description": { "de": "Links Text, rechts ein Bild.", "en": "Text on the left, image on the right." },
+      "category": "media",
+      "sketch": "image-right",
+      "slots": [{ "name": "default", "label": { "de": "Text", "en": "Text" } }],
+      "fields": [
+        { "key": "image", "type": "image", "label": { "de": "Bild", "en": "Image" } },
+        { "key": "backgroundSize", "type": "select", "label": { "de": "Bildausschnitt", "en": "Image fit" }, "default": "cover", "options": [{ "value": "cover", "label": { "de": "Füllen", "en": "Fill" } }, { "value": "contain", "label": { "de": "Ganz zeigen", "en": "Show whole image" } }] }
+      ],
+      "starter": { "de": "# Überschrift\n\nText zum Bild.", "en": "# Heading\n\nText about the picture." }
+    },
+    "quote": {
+      "label": { "de": "Zitat", "en": "Quote" },
+      "description": { "de": "Ein Zitat groß, mit Quelle darunter.", "en": "A large quote with its source below." },
+      "category": "emphasis",
+      "sketch": "quote",
+      "slots": [{ "name": "default", "label": { "de": "Zitat und Quelle", "en": "Quote and source" } }],
+      "fields": [],
+      "starter": { "de": "# Das Zitat steht hier.\n\nName der Person", "en": "# The quote goes here.\n\nName of the person" }
+    },
+    "statement": {
+      "label": { "de": "Aussage", "en": "Statement" },
+      "description": { "de": "Ein einziger großer Satz.", "en": "One single large sentence." },
+      "category": "emphasis",
+      "sketch": "statement",
+      "slots": [{ "name": "default", "label": { "de": "Aussage", "en": "Statement" } }],
+      "fields": [],
+      "starter": { "de": "# Eine klare Aussage", "en": "# A clear statement" }
+    },
+    "fact": {
+      "label": { "de": "Kennzahl", "en": "Key figure" },
+      "description": { "de": "Eine große Zahl mit kurzer Erklärung.", "en": "A large number with a short explanation." },
+      "category": "emphasis",
+      "sketch": "fact",
+      "slots": [{ "name": "default", "label": { "de": "Zahl und Erklärung", "en": "Number and explanation" } }],
+      "fields": [],
+      "starter": { "de": "# 100 %\n\nWas die Zahl bedeutet", "en": "# 100 %\n\nWhat the number means" }
+    },
+    "end": {
+      "label": { "de": "Schlussfolie", "en": "Closing slide" },
+      "description": { "de": "Dunkle Abschlussfolie, etwa mit Dank und Kontakt.", "en": "Dark closing slide, for example with thanks and contact." },
+      "category": "title",
+      "sketch": "end",
+      "slots": [{ "name": "default", "label": { "de": "Text", "en": "Text" } }],
+      "fields": [],
+      "starter": { "de": "# Danke!\n\nKontakt oder Fragen", "en": "# Thank you!\n\nContact or questions" }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+node_modules
+out
+dist
+release
+.dev-runtime
+.dev-userdata
+test-results
+playwright-report
+*.log
+build/npm.zip
+build/runtime-seed

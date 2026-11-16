@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Mock-Folie</title>
+<!--
+  Stand-in for a Slidev page with Podium's bridge client, used only when the renderer
+  runs against the mock backend in a browser. Same origin as the renderer, so it reads
+  slide HTML from window.parent.__podiumMock. Speaks the protocol in src/shared/bridge.ts.
+-->
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+  body { font-family: system-ui, sans-serif; }
+  #slide {
+    position: absolute; left: 0; top: 0; overflow: hidden; transform-origin: 0 0;
+    background: var(--bg); color: var(--fg); box-sizing: border-box;
+  }
+  .layout { position: absolute; inset: 0; padding: 48px 64px; box-sizing: border-box; background-size: cover; background-position: center; }
+  h1 { font-size: 42px; margin: 0 0 20px; line-height: 1.15; }
+  h2 { font-size: 30px; margin: 0 0 14px; }
+  h3 { font-size: 24px; margin: 0 0 10px; }
+  p, li { font-size: 22px; line-height: 1.45; margin: 0 0 10px; }
+  ul, ol { margin: 0 0 12px; padding-left: 28px; }
+  li::marker { color: var(--accent); }
+  code { font-family: ui-monospace, monospace; background: color-mix(in srgb, var(--fg) 8%, transparent); padding: 0 4px; border-radius: 3px; }
+  pre { font-size: 16px; background: #1e1e2a; color: #e8e8f0; padding: 14px 18px; border-radius: 6px; }
+  pre code { background: none; padding: 0; }
+  a { color: var(--accent); }
+  table { border-collapse: collapse; font-size: 20px; margin-top: 8px; }
+  th, td { border-bottom: 1px solid color-mix(in srgb, var(--fg) 25%, transparent); padding: 8px 18px; text-align: left; }
+  th { color: var(--accent); }
+  img { max-width: 60%; max-height: 300px; border-radius: 4px; }
+  blockquote { margin: 0 0 12px; border-left: 4px solid var(--accent); padding-left: 18px; font-style: italic; }
+  .layout-cover, .layout-center, .layout-end, .layout-fact, .layout-statement, .layout-quote, .layout-section { display: flex; flex-direction: column; justify-content: center; }
+  .layout-center, .layout-end, .layout-fact, .layout-statement { text-align: center; }
+  .layout-cover h1 { font-size: 52px; }
+  .layout-section, .layout-statement { background: var(--accent); color: var(--bg); }
+  .layout-fact h1 { font-size: 96px; color: var(--accent); }
+  .layout-two-cols, .layout-two-cols-header { display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; align-content: start; }
+  .layout-two-cols .cols, .layout-two-cols-header .cols { display: contents; }
+  .layout-two-cols .slot-left:empty { display: none; }
+  .layout-two-cols-header > .slot-default { grid-column: 1 / -1; }
+  .layout-image-right, .layout-image-left { display: grid; grid-template-columns: 1fr 1fr; padding: 0; }
+  .layout-image-right > .slot, .layout-image-left > .slot { padding: 48px 48px; }
+  .layout-image-left > .slot { order: 2; }
+  .image { background-size: cover; background-position: center; background-color: color-mix(in srgb, var(--accent) 20%, transparent); }
+  [data-pd-code="html"] { border: 2px dashed color-mix(in srgb, var(--accent) 60%, transparent); padding: 24px; border-radius: 8px; color: color-mix(in srgb, var(--fg) 60%, transparent); font-family: ui-monospace, monospace; font-size: 16px; }
+  .html-src { background: none; color: inherit; padding: 0; margin: 0; font-size: 16px; white-space: pre-wrap; }
+  .pd-edit [data-pd-editable]:hover { outline: 1px dashed color-mix(in srgb, #3b6fe0 70%, transparent); outline-offset: 4px; cursor: text; }
+  .pd-edit [data-pd-code]:hover { outline: 1px dashed #999; outline-offset: 4px; cursor: pointer; }
+  .pd-selected { outline: 2px solid #3b6fe0 !important; outline-offset: 4px; }
+  [contenteditable="true"] { outline: 2px solid #3b6fe0 !important; outline-offset: 4px; caret-color: #3b6fe0; }
+</style>
+</head>
+<body>
+<div id="slide"></div>
+<script>
+(() => {
+  const TAG = 'podium-bridge'
+  const mock = window.parent && window.parent.__podiumMock
+  const slideEl = document.getElementById('slide')
+  let no = Number(location.pathname.split('/').filter(Boolean).pop()) || 1
+  let mode = null
+  let total = 0
+  let selected = null
+  let editing = null
+  let original = ''
+
+  const post = msg => window.parent.postMessage({ tag: TAG, ...msg }, '*')
+  const refOf = el => JSON.parse(el.getAttribute('data-ref'))
+  const rectOf = (el) => {
+    const r = el.getBoundingClientRect()
+    return { x: r.x, y: r.y, width: r.width, height: r.height }
+  }
+
+  function render() {
+    if (!mock) { slideEl.textContent = 'Kein Mock'; return }
+    const data = mock.render(no)
+    if (!data) return
+    total = data.total
+    const { width, height } = data.canvas
+    slideEl.style.width = width + 'px'
+    slideEl.style.height = height + 'px'
+    slideEl.style.setProperty('--bg', data.colors.background)
+    slideEl.style.setProperty('--fg', data.colors.foreground)
+    slideEl.style.setProperty('--accent', data.colors.accent)
+    slideEl.innerHTML = data.html
+    selected = null
+    fit()
+  }
+  function fit() {
+    const w = parseFloat(slideEl.style.width) || 980
+    const h = parseFloat(slideEl.style.height) || 552
+    const scale = Math.min(innerWidth / w, innerHeight / h)
+    const x = (innerWidth - w * scale) / 2
+    const y = (innerHeight - h * scale) / 2
+    slideEl.style.transform = `translate(${x}px, ${y}px) scale(${scale})`
+  }
+  addEventListener('resize', fit)
+
+  function inlineMarkdown(node) {
+    let out = ''
+    for (const child of node.childNodes) {
+      if (child.nodeType === 3) { out += child.textContent; continue }
+      if (child.nodeType !== 1) continue
+      const inner = inlineMarkdown(child)
+      const tag = child.tagName.toLowerCase()
+      if (tag === 'strong' || tag === 'b') out += inner ? `**${inner}**` : ''
+      else if (tag === 'em' || tag === 'i') out += inner ? `*${inner}*` : ''
+      else if (tag === 'code') out += inner ? '`' + inner + '`' : ''
+      else if (tag === 'a') out += `[${inner}](${child.getAttribute('href') || ''})`
+      else if (tag === 'br') out += ' '
+      else out += inner
+    }
+    return out.replace(/ /g, ' ')
+  }
+
+  function select(el) {
+    if (selected) selected.classList.remove('pd-selected')
+    selected = el
+    if (el) el.classList.add('pd-selected')
+  }
+
+  function startEdit(el, selectAll) {
+    if (editing && editing !== el) commit()
+    select(el)
+    editing = el
+    original = el.innerHTML
+    el.contentEditable = 'true'
+    el.focus()
+    if (selectAll) {
+      const range = document.createRange()
+      range.selectNodeContents(el)
+      const sel = getSelection()
+      sel.removeAllRanges()
+      sel.addRange(range)
+    }
+    post({ type: 'editStarted', no, block: refOf(el), rect: rectOf(el) })
+    sendFormatState()
+  }
+
+  function finish() {
+    if (!editing) return null
+    const el = editing
+    editing = null
+    el.contentEditable = 'false'
+    return el
+  }
+
+  function commit() {
+    const el = editing
+    if (!el) return
+    const changed = el.innerHTML !== original
+    finish()
+    if (changed) post({ type: 'blockCommit', no, block: refOf(el), markdown: inlineMarkdown(el).trim() })
+    else post({ type: 'editCancelled' })
+  }
+
+  function cancel() {
+    const el = finish()
+    if (!el) return
+    el.innerHTML = original
+    post({ type: 'editCancelled' })
+  }
+
+  function sendFormatState() {
+    if (!editing) return
+    const sel = getSelection()
+    const node = sel && sel.anchorNode
+    const within = tag => {
+      let n = node && (node.nodeType === 1 ? node : node.parentElement)
+      while (n && n !== editing) { if (n.tagName && n.tagName.toLowerCase() === tag) return true; n = n.parentElement }
+      return false
+    }
+    post({ type: 'formatState', bold: within('strong') || within('b'), italic: within('em') || within('i'), code: within('code'), link: within('a') })
+  }
+  document.addEventListener('selectionchange', sendFormatState)
+
+  document.addEventListener('click', (e) => {
+    if (mode !== 'edit') return
+    const block = e.target.closest('[data-pd-editable]')
+    if (block) {
+      if (editing === block) return
+      post({ type: 'blockSelected', no, block: refOf(block), editable: true, rect: rectOf(block) })
+      startEdit(block, false)
+      return
+    }
+    if (editing) commit()
+    const code = e.target.closest('[data-pd-code]')
+    if (code) {
+      select(code)
+      post({ type: 'codeClicked', no, what: code.getAttribute('data-pd-code'), rect: rectOf(code) })
+      return
+    }
+    select(null)
+    post({ type: 'backgroundClicked', no })
+  })
+
+  // Focus moving to the host (toolbar buttons, link field) keeps the edit open, like a
+  // text box in PowerPoint keeps its selection while you use the ribbon.
+  document.addEventListener('focusout', (e) => {
+    setTimeout(() => {
+      if (editing && e.target === editing && document.hasFocus()) commit()
+    }, 0)
+  })
+
+  document.addEventListener('keydown', (e) => {
+    if (mode !== 'edit') return
+    if (editing) {
+      if (e.key === 'Escape') { e.preventDefault(); cancel(); return }
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        if (editing.tagName === 'LI') {
+          const sel = getSelection()
+          const range = sel.getRangeAt(0)
+          const after = document.createRange()
+          after.setStart(range.endContainer, range.endOffset)
+          after.setEnd(editing, editing.childNodes.length)
+          const restFrag = after.extractContents()
+          const tmp = document.createElement('div')
+          tmp.appendChild(restFrag)
+          const el = finish()
+          post({ type: 'listItemSplit', no, block: refOf(el), markdown: inlineMarkdown(el).trim(), rest: inlineMarkdown(tmp).trim() })
+          return
+        }
+        commit()
+        return
+      }
+      if ((e.key === 'Backspace' || e.key === 'Delete') && !editing.textContent.trim()) {
+        e.preventDefault()
+        const el = finish()
+        post({ type: 'blockRemove', no, block: refOf(el) })
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && ['b', 'i'].includes(e.key.toLowerCase())) {
+        e.preventDefault()
+        document.execCommand(e.key.toLowerCase() === 'b' ? 'bold' : 'italic')
+        sendFormatState()
+      }
+      return
+    }
+    const forward = e.ctrlKey || e.metaKey || e.altKey || ['Delete', 'F5', 'PageUp', 'PageDown', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)
+    if (forward && !['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+      e.preventDefault()
+      post({ type: 'shortcut', key: e.key, ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey, alt: e.altKey })
+    }
+  })
+
+  function findBlock(ref) {
+    const all = [...document.querySelectorAll('[data-pd-editable]')]
+    return all.find((el) => { const r = refOf(el); return r.tag === ref.tag && r.text === ref.text && r.occurrence === ref.occurrence })
+      || all.find((el) => { const r = refOf(el); return r.tag === ref.tag && r.tagIndex === ref.tagIndex })
+  }
+
+  addEventListener('message', (e) => {
+    if (e.source !== window.parent) return
+    const msg = e.data
+    if (!msg || msg.tag !== TAG) return
+    switch (msg.type) {
+      case 'hello':
+      case 'setMode':
+        mode = msg.mode
+        document.body.classList.toggle('pd-edit', mode === 'edit')
+        if (msg.type === 'hello') post({ type: 'ready', no, total })
+        break
+      case 'goto':
+        if (msg.no !== no) {
+          if (editing) commit()
+          no = msg.no
+          history.replaceState(null, '', `${no}${location.search}`)
+          render()
+        }
+        post({ type: 'navigated', no })
+        break
+      case 'focusBlock': {
+        // The real page re-renders after the file changes; give it a moment like Slidev's HMR.
+        let tries = 0
+        const attempt = () => {
+          const el = findBlock(msg.block)
+          if (el) startEdit(el, msg.selectAll)
+          else if (tries++ < 10) setTimeout(attempt, 50)
+        }
+        attempt()
+        break
+      }
+      case 'format':
+        if (!editing) break
+        if (msg.command === 'bold') document.execCommand('bold')
+        else if (msg.command === 'italic') document.execCommand('italic')
+        else if (msg.command === 'link' && msg.value) document.execCommand('createLink', false, msg.value)
+        else if (msg.command === 'clear') document.execCommand('removeFormat')
+        else if (msg.command === 'code') {
+          const sel = getSelection()
+          if (sel.rangeCount && !sel.isCollapsed) {
+            const range = sel.getRangeAt(0)
+            const code = document.createElement('code')
+            code.appendChild(range.extractContents())
+            range.insertNode(code)
+          }
+        }
+        sendFormatState()
+        break
+      case 'endEdit':
+        if (msg.commit) commit(); else cancel()
+        break
+      case 'clearSelection':
+        if (editing) commit()
+        select(null)
+        break
+      case 'measure': {
+        const s = slideEl.querySelector('.layout')
+        const overflowY = s ? Math.max(0, s.scrollHeight - s.clientHeight) : 0
+        const overflowX = s ? Math.max(0, s.scrollWidth - s.clientWidth) : 0
+        post({ type: 'measured', requestId: msg.requestId, report: { no, overflowX, overflowY } })
+        break
+      }
+    }
+  })
+
+  if (mock) mock.subscribe(() => { if (!editing) render() })
+  render()
+})()
+</script>
+</body>
+</html>
