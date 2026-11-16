@@ -1,7 +1,7 @@
 {
   "name": "podium",
   "productName": "Podium",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Desktop-App für Slidev-Präsentationen: bearbeiten wie in PowerPoint, Dateien bleiben Markdown.",
   "private": true,
   "type": "module",
