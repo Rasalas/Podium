@@ -141,7 +141,9 @@ else {
         return
       event.preventDefault()
       quitting = true
-      void services.shutdown().finally(() => {
+      // Closing decks stops their Slidev servers. If one of them never answers, the app still has to quit.
+      const giveUp = new Promise<void>(resolve => setTimeout(resolve, 6000))
+      void Promise.race([services.shutdown().catch(() => {}), giveUp]).then(() => {
         // Everything is saved and closed: the moment a loaded update can take the app's place.
         services.updater.installOnQuit()
         app.quit()
