@@ -15,8 +15,8 @@
     "test:e2e": "xvfb-run -a -s \"-screen 0 1600x1000x24\" playwright test -c tests/e2e/app/playwright.config.ts",
     "test:bridge": "playwright test -c tests/e2e/bridge/playwright.config.ts",
     "seed": "node scripts/prepare-seed.mjs",
-    "dist": "node scripts/prepare-npm.mjs && electron-vite build && electron-builder --publish never",
-    "dist:dir": "node scripts/prepare-npm.mjs && electron-vite build && electron-builder --dir --publish never"
+    "dist": "node scripts/prepare-npm.mjs && electron-vite build && electron-builder --config electron-builder.config.cjs --publish never",
+    "dist:dir": "node scripts/prepare-npm.mjs && electron-vite build && electron-builder --config electron-builder.config.cjs --dir --publish never"
   },
   "devDependencies": {
     "@codemirror/commands": "^6.11.1",
@@ -60,93 +60,6 @@
   },
   "homepage": "https://github.com/Rasalas/Podium",
   "license": "UNLICENSED",
-  "build": {
-    "appId": "dev.podium.app",
-    "productName": "Podium",
-    "directories": {
-      "output": "release",
-      "buildResources": "build"
-    },
-    "files": [
-      "out/**/*",
-      "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "launcher",
-        "to": "launcher",
-        "filter": [
-          "launcher.mjs",
-          "bridge-client.js"
-        ]
-      },
-      {
-        "from": "templates",
-        "to": "templates"
-      },
-      {
-        "from": "build/npm.zip",
-        "to": "npm.zip"
-      },
-      {
-        "from": "build/runtime-seed",
-        "to": "runtime-seed"
-      }
-    ],
-    "fileAssociations": [
-      {
-        "ext": "podium",
-        "name": "Podium-Präsentation",
-        "role": "Editor"
-      }
-    ],
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "category": "Office",
-      "maintainer": "Podium contributors <podium@localhost>",
-      "syncDesktopName": true
-    },
-    "mac": {
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "arm64",
-            "x64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "arm64",
-            "x64"
-          ]
-        }
-      ],
-      "category": "public.app-category.productivity",
-      "identity": "-",
-      "hardenedRuntime": false,
-      "artifactName": "${productName}-${version}-${arch}.${ext}"
-    },
-    "win": {
-      "target": [
-        "nsis"
-      ]
-    },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "Rasalas",
-        "repo": "Podium"
-      }
-    ],
-    "nsis": {
-      "artifactName": "${productName}-Setup-${version}.${ext}"
-    }
-  },
   "desktopName": "podium.desktop",
   "repository": {
     "type": "git",

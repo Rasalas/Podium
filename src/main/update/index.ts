@@ -54,6 +54,16 @@ function run(file: string, args: string[]): Promise<string> {
   })
 }
 
+/** The Apple team that signed a bundle, or undefined for an ad-hoc signature. codesign reports on stderr. */
+function teamOf(bundle: string): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    execFile('/usr/bin/codesign', ['-dv', '--verbose=2', bundle], { timeout: 60_000 }, (_error, _stdout, stderr) => {
+      const team = /^TeamIdentifier=(.+)$/m.exec(String(stderr))?.[1]?.trim()
+      resolve(team && team !== 'not set' ? team : undefined)
+    })
+  })
+}
+
 /** The .app this process runs from, when it sits somewhere it can be replaced. */
 function replaceableMacBundle(): string | undefined {
   const bundle = dirname(dirname(dirname(app.getPath('exe'))))
@@ -142,6 +152,11 @@ export function createUpdater(options: UpdaterOptions): Updater {
       const own = replaceableMacBundle()
       const ownId = own ? await bundleInfo(own, 'CFBundleIdentifier') : undefined
       if (!ownId || await bundleInfo(bundle, 'CFBundleIdentifier') !== ownId)
+        return undefined
+      // An app signed with a Developer ID only accepts an update from the same team. An ad-hoc
+      // signed app has no team to compare with; there the feed's checksum is the only check.
+      const ownTeam = own ? await teamOf(own) : undefined
+      if (ownTeam && await teamOf(bundle) !== ownTeam)
         return undefined
       return await bundleInfo(bundle, 'CFBundleShortVersionString') === version ? bundle : undefined
     }

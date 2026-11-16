@@ -7,6 +7,8 @@ name: Release
 on:
   push:
     tags: ['v*']
+  # Started by hand it only builds, to try the packaging without publishing anything.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -25,13 +27,58 @@ jobs:
           node-version: 24
           cache: npm
       - name: Tag and package.json must name the same version
+        if: startsWith(github.ref, 'refs/tags/')
         shell: bash
         run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
       - run: npm ci
       - name: Typecheck and unit tests
         if: matrix.os == 'ubuntu-latest'
         run: npm run typecheck && npm test
+      # With the certificate in the repository's secrets the macOS app is signed and notarized.
+      # Without it the build still works and gets an ad-hoc signature.
+      - name: macOS signing credentials
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          ID: ${{ secrets.APPLE_ID }}
+          APP_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          put() { printf '%s<<__PODIUM__\n%s\n__PODIUM__\n' "$1" "$2" >> "$GITHUB_ENV"; }
+          if [ -z "$MAC_CSC_LINK" ]; then
+            echo "No certificate in the secrets: the app gets an ad-hoc signature."
+            exit 0
+          fi
+          put CSC_LINK "$MAC_CSC_LINK"
+          put CSC_KEY_PASSWORD "$MAC_CSC_KEY_PASSWORD"
+          put PODIUM_SIGNED 1
+          if [ -n "$APPLE_API_KEY_P8" ]; then
+            printf '%s\n' "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+            put APPLE_API_KEY "$RUNNER_TEMP/AuthKey.p8"
+            put APPLE_API_KEY_ID "$API_KEY_ID"
+            put APPLE_API_ISSUER "$API_ISSUER"
+          elif [ -n "$APP_PASSWORD" ]; then
+            put APPLE_ID "$ID"
+            put APPLE_APP_SPECIFIC_PASSWORD "$APP_PASSWORD"
+            put APPLE_TEAM_ID "$TEAM_ID"
+          else
+            echo "::error::A certificate is set but no notarization credentials. macOS would still block the app."
+            exit 1
+          fi
       - run: npm run dist
+      - name: macOS must accept the signed app
+        if: runner.os == 'macOS' && env.PODIUM_SIGNED == '1'
+        run: |
+          for app in release/mac-arm64/Podium.app release/mac/Podium.app; do
+            codesign --verify --deep --strict "$app"
+            xcrun stapler validate "$app"
+            spctl --assess --type execute -vv "$app"
+          done
       - uses: actions/upload-artifact@v7
         with:
           name: installers-${{ matrix.os }}
@@ -48,6 +95,7 @@ jobs:
 
   publish:
     needs: build
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v8
