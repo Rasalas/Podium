@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DisplayInfo, Settings } from '@shared/types'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { api } from '../api'
 import { t } from '../i18n'
 import { useAppStore } from '../stores/app'
@@ -20,6 +20,30 @@ const PRESETS: Record<Exclude<Settings['agentPreset'], 'custom'>, string> = {
 onMounted(async () => {
   displays.value = (await ui.attempt(() => api().getDisplays())) ?? []
 })
+
+const checked = ref(false)
+const updateBusy = computed(() => app.update?.status === 'checking' || app.update?.status === 'downloading')
+const updateStatus = computed(() => {
+  const update = app.update
+  if (!update)
+    return ''
+  switch (update.status) {
+    case 'checking': return t('update.checking')
+    case 'downloading': return t('update.downloading', { v: update.version ?? '', p: Math.round((update.progress ?? 0) * 100) })
+    case 'ready': return t('update.readyShort', { v: update.version ?? '' })
+    case 'available': return t('update.availableShort', { v: update.version ?? '' })
+    case 'error': return t('update.failed', { msg: update.error ?? '' })
+    default: return checked.value ? t('update.upToDate') : ''
+  }
+})
+
+async function checkNow() {
+  const state = await ui.attempt(() => api().checkForUpdates())
+  if (state) {
+    app.update = state
+    checked.value = true
+  }
+}
 
 function setPreset(preset: Settings['agentPreset']) {
   const patch: Partial<Settings> = { agentPreset: preset }
@@ -75,6 +99,18 @@ function setPreset(preset: Settings['agentPreset']) {
         </select>
       </div>
 
+      <fieldset v-if="app.update && app.update.status !== 'off'">
+        <legend class="label">{{ t('update.heading') }}</legend>
+        <label class="check">
+          <input type="checkbox" :checked="app.settings.autoUpdate" @change="app.saveSettings({ autoUpdate: ($event.target as HTMLInputElement).checked })">
+          {{ t('update.auto') }}
+        </label>
+        <div class="update-row">
+          <button class="btn outline" data-testid="update-check" :disabled="updateBusy" @click="checkNow">{{ t('update.check') }}</button>
+          <span class="hint" role="status" data-testid="update-status">{{ updateStatus }}</span>
+        </div>
+      </fieldset>
+
       <p v-if="app.info" class="hint version">{{ t('settings.version', { v: app.info.version }) }}</p>
     </div>
     <template #footer>
@@ -96,4 +132,6 @@ legend { padding: 0; }
 .mono { font-family: var(--font-mono); font-size: var(--fs-sm); }
 .hint { margin-top: 4px; }
 .version { margin-top: 4px; }
+.update-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.update-row .hint { margin: 0; }
 </style>

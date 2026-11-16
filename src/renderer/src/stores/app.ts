@@ -1,4 +1,4 @@
-import type { AppInfo, DeckOpenResult, NewDeckOptions, PackageRequest, ProgressEvent, RecentDeck, RuntimeStatus, Settings, TemplateInfo } from '@shared/types'
+import type { AppInfo, DeckOpenResult, NewDeckOptions, PackageRequest, ProgressEvent, RecentDeck, RuntimeStatus, Settings, TemplateInfo, UpdateState } from '@shared/types'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api, errorMessage } from '../api'
@@ -22,6 +22,8 @@ export const useAppStore = defineStore('app', () => {
   const view = ref<View>('boot')
   const info = ref<AppInfo>()
   const settings = ref<Settings>()
+  /** Where the app stands with its own updates. Follows 'update:state' events. */
+  const update = ref<UpdateState>()
   const runtime = ref<RuntimeStatus>()
   const runtimeProgress = ref<ProgressEvent>()
   const runtimeError = ref<string>()
@@ -42,6 +44,7 @@ export const useAppStore = defineStore('app', () => {
   async function boot() {
     try {
       const [appInfo, appSettings, status] = await Promise.all([api().getAppInfo(), api().getSettings(), api().getRuntimeStatus()])
+      void api().getUpdateState().then((state) => { update.value ??= state }).catch(() => {})
       info.value = appInfo
       platform.value = appInfo.platform
       settings.value = appSettings
@@ -222,6 +225,7 @@ export const useAppStore = defineStore('app', () => {
     recents,
     templates,
     opening,
+    update,
     packagePrompt,
     installing,
     packageProgress,

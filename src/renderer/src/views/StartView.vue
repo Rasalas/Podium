@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RecentDeck } from '@shared/types'
 import { FolderOpen, LoaderCircle, Plus, Settings, X } from '@lucide/vue'
+import UpdateNote from '../components/UpdateNote.vue'
 import { onMounted } from 'vue'
 import { formatDateTime, t } from '../i18n'
 import { useAppStore } from '../stores/app'
@@ -38,6 +39,7 @@ function open(deck: RecentDeck) {
     <header class="head">
       <h1 class="app-name">{{ t('app.name') }}</h1>
       <div class="head-actions">
+        <UpdateNote />
         <button class="btn icon" :aria-label="t('editor.settings')" :data-tip="t('editor.settings')" @click="ui.settingsOpen = true">
           <Settings :size="18" />
         </button>

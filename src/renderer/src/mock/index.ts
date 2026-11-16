@@ -8,8 +8,8 @@ import type {
   DisplayInfo,
   LayoutInfo,
   PackageRequest,
-  PresentationState,
   PresentPosition,
+  PresentationState,
   RecentDeck,
   RemoteInfo,
   RemoteMode,
@@ -18,6 +18,7 @@ import type {
   Settings,
   SlideCheck,
   TemplateInfo,
+  UpdateState,
 } from '@shared/types'
 import { MockDeck } from './deck'
 import { MOCK_LAYOUTS, sampleDeck } from './data'
@@ -33,6 +34,18 @@ export interface MockControl {
   subscribe: (cb: () => void) => () => void
 }
 
+function mockUpdate(): UpdateState {
+  const wanted = params.get('mockUpdate')
+  const status = wanted === 'ready' || wanted === 'available' ? wanted : 'idle'
+  return {
+    status,
+    currentVersion: '0.2.0',
+    version: status === 'idle' ? undefined : '0.3.0',
+    releaseUrl: status === 'idle' ? undefined : 'https://github.com/Rasalas/Podium/releases/tag/v0.3.0',
+    downloadUrl: status === 'available' ? 'https://github.com/Rasalas/Podium/releases/latest' : undefined,
+  }
+}
+
 export function createMockBridge(): PodiumBridge & { __mock: true } {
   const listeners = new Map<string, Set<Listener>>()
   const emit = <K extends keyof PodiumEvents>(event: K, payload: PodiumEvents[K]) => {
@@ -46,7 +59,7 @@ export function createMockBridge(): PodiumBridge & { __mock: true } {
     slidevVersion: '53.1.0',
   }
   let runtimeFailOnce = params.get('mockRuntime') === 'error'
-  let settings: Settings = { locale: 'system', agentPreset: 'claude', agentCommand: 'claude -p {prompt}', autoInstallTrusted: true }
+  let settings: Settings = { locale: 'system', agentPreset: 'claude', agentCommand: 'claude -p {prompt}', autoInstallTrusted: true, autoUpdate: true }
   const installed = new Set(['@slidev/theme-default', 'slidev-theme-klar'])
   const decks = new Map<string, { deck: MockDeck, server: ServerStatus, rendered: Map<string, string> }>()
   let deckCounter = 0
@@ -264,6 +277,10 @@ export function createMockBridge(): PodiumBridge & { __mock: true } {
         defaultDeckDir: '/home/anna/Dokumente/Podium',
       }
     },
+    // ?mockUpdate=ready|available shows the update note.
+    getUpdateState: async () => mockUpdate(),
+    checkForUpdates: async () => mockUpdate(),
+    installUpdate: async () => {},
     getSettings: async () => ({ ...settings }),
     async setSettings(patch) {
       settings = { ...settings, ...patch }

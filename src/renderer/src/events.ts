@@ -20,6 +20,9 @@ export function installEventHandlers(): () => void {
       deck.presentation = state
     }),
     api().on('agent', event => deck.acceptAgent(event)),
+    api().on('update:state', (state) => {
+      app.update = state
+    }),
     api().on('open-request', ({ path }) => void app.openPath(path)),
     api().on('menu', ({ command }) => runCommand(command)),
   ]

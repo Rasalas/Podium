@@ -12,6 +12,7 @@ import { useAppStore } from '../stores/app'
 import { useDeckStore } from '../stores/deck'
 import { useUiStore } from '../stores/ui'
 import DropMenu from './DropMenu.vue'
+import UpdateNote from './UpdateNote.vue'
 
 const app = useAppStore()
 const deck = useDeckStore()
@@ -233,6 +234,7 @@ const rightVisible = computed(() => !ui.rightCollapsed)
     </div>
 
     <div class="group split">
+      <UpdateNote />
       <button
         v-if="remoteOn" class="btn icon remote-on" data-testid="remote-indicator"
         :aria-label="t('remote.indicator')" :data-tip="t('remote.indicator')" @click="ui.remoteOpen = true"

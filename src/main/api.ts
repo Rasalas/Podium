@@ -14,6 +14,7 @@ import { createSlidevServer } from './server'
 import { createRecentStore, createSettingsStore } from './stores'
 import { createTemplateRegistry } from './templates'
 import { createThumbnailer } from './thumbs'
+import { createUpdater } from './update'
 
 export type Emit = <K extends keyof PodiumEvents>(event: K, payload: PodiumEvents[K]) => void
 
@@ -69,6 +70,12 @@ export function createApi(options: { userDataDir: string, resourcesDir: string, 
     },
   })
   const exporter = createExporter({ runtime, onProgress: event => emit('progress', event) })
+  const updater = createUpdater({
+    userDataDir,
+    onState: state => emit('update:state', state),
+    automatic: () => settings.get().autoUpdate !== false,
+    busy: () => presentation.state().active,
+  })
   const agent = createAgentService({ settings: settings.get, onEvent: event => emit('agent', event) })
 
   const deckOptions = {
@@ -307,6 +314,10 @@ export function createApi(options: { userDataDir: string, resourcesDir: string, 
       return exporter.run(snapshot, readyUrl(deckId), format, result.filePath, passwordOf(deckId))
     },
 
+    getUpdateState: async () => updater.state(),
+    checkForUpdates: () => updater.check(true),
+    installUpdate: async () => updater.installNow(),
+
     getAgentInfo: deckId => agent.info(need(deckId).session.snapshot(), need(deckId).server?.status()),
     async writeAgentsFile(deckId) {
       const deck = need(deckId)
@@ -319,6 +330,7 @@ export function createApi(options: { userDataDir: string, resourcesDir: string, 
   return {
     api,
     locale,
+    updater,
     displays: () => screen.getAllDisplays(),
     async shutdown() {
       await presentation.stop().catch(() => {})

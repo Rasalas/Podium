@@ -128,6 +128,7 @@ else {
     mainWindow.on('closed', () => {
       mainWindow = undefined
     })
+    services.updater.start()
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0)
@@ -140,7 +141,11 @@ else {
         return
       event.preventDefault()
       quitting = true
-      void services.shutdown().finally(() => app.quit())
+      void services.shutdown().finally(() => {
+        // Everything is saved and closed: the moment a loaded update can take the app's place.
+        services.updater.installOnQuit()
+        app.quit()
+      })
     })
   })
 

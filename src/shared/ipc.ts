@@ -31,6 +31,7 @@ import type {
   SlideCheck,
   TemplateInfo,
   ThumbnailEvent,
+  UpdateState,
 } from './types'
 
 export interface PodiumApi {
@@ -44,6 +45,13 @@ export interface PodiumApi {
   pickFolder: (title: string, defaultPath?: string) => Promise<string | undefined>
   openExternal: (url: string) => Promise<void>
   showInFolder: (path: string) => Promise<void>
+
+  // --- app updates ---------------------------------------------------------
+  getUpdateState: () => Promise<UpdateState>
+  /** Look for a new version now and load it. Changes arrive as 'update:state' events. */
+  checkForUpdates: () => Promise<UpdateState>
+  /** Quit, install the loaded update and start again. Does nothing unless the state is 'ready'. */
+  installUpdate: () => Promise<void>
 
   // --- runtime and packages ------------------------------------------------
   getRuntimeStatus: () => Promise<RuntimeStatus>
@@ -126,6 +134,7 @@ export interface PodiumEvents {
   'server:status': ServerStatus
   'thumbnail': ThumbnailEvent
   'present:state': PresentationState
+  'update:state': UpdateState
   'agent': AgentEvent
   /** Menu or OS asked to open a deck (file association, second instance, menu item). */
   'open-request': { path: string }
@@ -157,6 +166,7 @@ export const IPC_EVENT_CHANNEL = 'podium:event'
 export const API_METHODS: PodiumApiMethod[] = [
   'getAppInfo', 'getSettings', 'setSettings', 'getRecentDecks', 'removeRecentDeck',
   'pickFolder', 'openExternal', 'showInFolder',
+  'getUpdateState', 'checkForUpdates', 'installUpdate',
   'getRuntimeStatus', 'ensureRuntime', 'listInstalledPackages', 'resolvePackage', 'installPackages',
   'listTemplates', 'getLayouts',
   'newDeck', 'openDeckDialog', 'openDeck', 'closeDeck', 'getDeck',

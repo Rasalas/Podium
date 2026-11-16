@@ -37,7 +37,7 @@ describe.skipIf(!hasDevRuntime)('runtime manager on a copy of .dev-runtime', () 
   let resourcesDir: string
   const events: ProgressEvent[] = []
   let manager: ReturnType<typeof createRuntimeManager>
-  const devPkgBefore = readFileSync(join(DEV_RUNTIME, 'package.json'), 'utf8')
+  const devPkgBefore = hasDevRuntime ? readFileSync(join(DEV_RUNTIME, 'package.json'), 'utf8') : ''
   // The app itself (e2e runs) may have set up .dev-runtime's builtin templates; only changes by this test count.
   const devBuiltinBefore = existsSync(join(DEV_RUNTIME, 'builtin'))
 

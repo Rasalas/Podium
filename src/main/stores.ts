@@ -26,6 +26,7 @@ const DEFAULT_SETTINGS: Settings = {
   agentPreset: 'claude',
   agentCommand: AGENT_PRESETS.claude,
   autoInstallTrusted: true,
+  autoUpdate: true,
 }
 
 export function createSettingsStore(userDataDir: string) {

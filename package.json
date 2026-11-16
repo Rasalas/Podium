@@ -1,7 +1,7 @@
 {
   "name": "podium",
   "productName": "Podium",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Desktop-App für Slidev-Präsentationen: bearbeiten wie in PowerPoint, Dateien bleiben Markdown.",
   "private": true,
   "type": "module",
@@ -15,8 +15,8 @@
     "test:e2e": "xvfb-run -a -s \"-screen 0 1600x1000x24\" playwright test -c tests/e2e/app/playwright.config.ts",
     "test:bridge": "playwright test -c tests/e2e/bridge/playwright.config.ts",
     "seed": "node scripts/prepare-seed.mjs",
-    "dist": "node scripts/prepare-npm.mjs && electron-vite build && electron-builder",
-    "dist:dir": "node scripts/prepare-npm.mjs && electron-vite build && electron-builder --dir"
+    "dist": "node scripts/prepare-npm.mjs && electron-vite build && electron-builder --publish never",
+    "dist:dir": "node scripts/prepare-npm.mjs && electron-vite build && electron-builder --dir --publish never"
   },
   "devDependencies": {
     "@codemirror/commands": "^6.11.1",
@@ -37,6 +37,7 @@
     "codemirror": "^6.0.2",
     "electron": "^45.3.1",
     "electron-builder": "^26.18.0",
+    "electron-updater": "^6.8.12",
     "electron-vite": "^6.0.0",
     "esbuild": "^0.28.2",
     "fflate": "^0.8.3",
@@ -57,7 +58,7 @@
   "author": {
     "name": "Podium contributors"
   },
-  "homepage": "https://sli.dev",
+  "homepage": "https://github.com/Rasalas/Podium",
   "license": "UNLICENSED",
   "build": {
     "appId": "dev.podium.app",
@@ -110,17 +111,45 @@
     },
     "mac": {
       "target": [
-        "dmg"
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
       ],
       "category": "public.app-category.productivity",
       "identity": "-",
-      "hardenedRuntime": false
+      "hardenedRuntime": false,
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "win": {
       "target": [
         "nsis"
       ]
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Rasalas",
+        "repo": "Podium"
+      }
+    ],
+    "nsis": {
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     }
   },
-  "desktopName": "podium.desktop"
+  "desktopName": "podium.desktop",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Rasalas/Podium.git"
+  }
 }

@@ -40,6 +40,29 @@ export interface Settings {
   audienceDisplayId?: number
   /** Install packages from the trusted list without asking. */
   autoInstallTrusted: boolean
+  /** Look for new versions of the app, load them in the background and install them when the app quits. */
+  autoUpdate: boolean
+}
+
+/** Where the app stands with its own updates. */
+export interface UpdateState {
+  /**
+   * off: this build does not update (development). idle: nothing to do. ready: loaded, installs when
+   * the app quits. available: there is a new version, but this installation cannot replace itself
+   * (a system package, an app run from the disk image); `downloadUrl` is the installer to fetch.
+   */
+  status: 'off' | 'idle' | 'checking' | 'downloading' | 'ready' | 'available' | 'error'
+  currentVersion: string
+  /** The newer version, once one was found. */
+  version?: string
+  /** 0 to 1 while downloading. */
+  progress?: number
+  downloadUrl?: string
+  /** Release notes of `version`. */
+  releaseUrl?: string
+  error?: string
+  /** Epoch ms of the last completed check. */
+  lastChecked?: number
 }
 
 // ---------------------------------------------------------------------------

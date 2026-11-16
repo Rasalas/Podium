@@ -1,15 +1,42 @@
 # Podium
 
-Desktop-App für Slidev-Präsentationen. Du bearbeitest Folien wie in PowerPoint, die Dateien bleiben normales Slidev-Markdown. Deshalb können KI-Agenten und Entwickler am selben Deck arbeiten wie jemand, der nie ein Terminal öffnet.
+Desktop-App für [Slidev](https://sli.dev)-Präsentationen. Du bearbeitest Folien wie in PowerPoint, die Dateien bleiben normales Slidev-Markdown. Deshalb können KI-Agenten und Entwickler am selben Deck arbeiten wie jemand, der nie ein Terminal öffnet.
+
+![Folie bearbeiten: Text direkt auf der Folie tippen, darunter die Notizen mit Klick-Marken](docs/screenshots/editor.png)
+
+## Herunterladen
+
+Die aktuelle Version steht unter [Releases](https://github.com/Rasalas/Podium/releases/latest).
+
+| System | Datei | Hinweis zum ersten Start |
+| --- | --- | --- |
+| macOS (Apple-Chip) | `Podium-…-arm64.dmg` | Die App ist nicht bei Apple registriert. macOS blockiert sie beim ersten Öffnen: Systemeinstellungen, "Datenschutz & Sicherheit", "Dennoch öffnen". |
+| macOS (Intel) | `Podium-…-x64.dmg` | wie oben |
+| Windows | `Podium-Setup-….exe` | Windows warnt vor einer unbekannten App: "Weitere Informationen", dann "Trotzdem ausführen". |
+| Linux | `Podium-….AppImage` oder `podium_…_amd64.deb` | AppImage ausführbar machen und starten. |
+
+Beim ersten Start richtet Podium Slidev ein. Das braucht einmal Internet und dauert etwa eine Minute.
+
+## Updates
+
+Podium sucht im Hintergrund nach neuen Versionen, lädt sie und installiert sie, wenn du die App beendest. Es öffnet sich dafür kein Fenster. Sobald ein Update geladen ist, steht oben "Update bereit". Dort kannst du auch sofort neu starten. Während einer Präsentation wird nichts geladen.
+
+In den Einstellungen lässt sich das abschalten, und es gibt einen Knopf "Nach Updates suchen". Das `.deb`-Paket kann sich nicht selbst ersetzen. Dort zeigt Podium nur an, dass es eine neue Version gibt, und verlinkt den Download.
 
 ## Was die App kann
 
 - **Präsentieren mit Beamer.** Ein Knopf legt die Folien im Vollbild auf den zweiten Bildschirm und zeigt auf dem ersten Slidevs Referentenansicht mit Notizen, nächster Folie und Uhr. Das Bearbeitungsfenster blendet sich so lange aus. Esc beendet, im Menü "Präsentieren" lassen sich die Bildschirme tauschen.
+
+  ![Slidevs Referentenansicht mit Notizen und nächster Folie](docs/screenshots/presenter.png)
+
 - **Präsentieren in Zoom oder Teams.** "Im Fenster" zeigt die Folien in einem normalen Fenster mit festem Titel, das du in der Videokonferenz teilst. Die Referentenansicht steht daneben.
 - **Handy als Fernbedienung.** Ein QR-Code öffnet Slidevs Referentenansicht auf dem Handy. Über Tailscale erreichen sie nur deine eigenen Geräte, im WLAN jedes Gerät im selben Netz.
 - **Bearbeiten auf der Folie.** Text anklicken und tippen. Podium ändert genau die betroffene Zeile in der `slides.md`. Das gilt für jeden sichtbaren Text aus dem Vortrag, auch in HTML, in Tabellen, in der Zeile über dem Titel und in der Fußzeile.
 - **Notizen.** Die Höhe lässt sich ziehen, ein Doppelklick auf den Rand zeigt alles. Klick-Marken (`[click]`) fügt ein Knopf oder Strg+Enter ein, sie erscheinen als nummerierte Marken.
 - **Vorlagen und Layouts.** Eine Vorlage ist ein Slidev-Theme plus eine Beschreibung seiner Layouts. Daraus entstehen die Layout-Auswahl und die Eigenschaften. Die Vorlage "Klar" ist eingebaut und funktioniert ohne Internet.
+
+  ![Layout wählen](docs/screenshots/layouts.png)
+
 - **Vorhandene Slidev-Vorträge.** Ein Ordner mit `slides.md` lässt sich direkt öffnen. Liegt die Vorlage im Vortragsordner selbst (als Workspace-Paket, etwa unter `packages/`), nimmt Podium sie von dort.
 - **Pakete ohne Terminal.** Slidev liegt einmal im Benutzerordner, Decks brauchen kein `node_modules`. Nennt ein Deck ein Theme oder Addon, lädt Podium es nach. Pakete von der geprüften Liste installiert es still, bei allen anderen fragt es.
 - **Arbeiten mit Agenten.** Jedes neue Deck bekommt eine `AGENTS.md`. Podium zeigt Änderungen von außen sofort an und nimmt sie in den Rückgängig-Verlauf auf. Solange ein Deck offen ist, läuft Slidevs MCP-Server.
@@ -39,6 +66,17 @@ npm run seed           legt build/runtime-seed an, danach enthält der Installer
 ```
 
 Ohne Seed ist der Installer klein und lädt Slidev beim ersten Start. Mit Seed ist er rund 600 MB größer und läuft sofort ohne Internet.
+
+## Version veröffentlichen
+
+```
+npm version 0.3.0          setzt die Version und legt den Tag v0.3.0 an
+git push --follow-tags
+```
+
+Der Tag startet auf GitHub den Ablauf `Release`: Er baut die Installer für macOS, Windows und Linux und hängt sie an ein neues Release. Aus genau diesen Dateien holen sich die installierten Apps ihr Update.
+
+Die Screenshots oben erzeugt `xvfb-run -a -s "-screen 0 1600x1000x24" node scripts/screenshots.mjs`.
 
 ## Aufbau
 

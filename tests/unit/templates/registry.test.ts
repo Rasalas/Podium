@@ -1,10 +1,12 @@
-import { mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { createTemplateRegistry } from '../../../src/main/templates'
 import { fakeRuntime, FIXTURES, fixtureRuntime, registryOptions, ROOT } from './helpers'
 
+// Two tests read the real themes of the development runtime; a fresh checkout (CI) has none.
+const hasDevRuntime = existsSync(join(ROOT, '.dev-runtime', 'node_modules', '@slidev', 'theme-seriph', 'package.json'))
 const empty = mkdtempSync(join(tmpdir(), 'podium-tpl-'))
 afterAll(() => rmSync(empty, { recursive: true, force: true }))
 
@@ -45,7 +47,7 @@ describe('layoutsFor: Slidev base layouts', () => {
     expect(by(layouts, 'two-cols')?.starter).toContain('# Left')
   })
 
-  it('has the right slots, fields and starters', async () => {
+  it.skipIf(!hasDevRuntime)('has the right slots, fields and starters', async () => {
     const reg = createTemplateRegistry(registryOptions(fakeRuntime()))
     const layouts = await reg.layoutsFor(deck('default'))
     expect(by(layouts, 'two-cols')?.slots.map(s => s.name)).toEqual(['default', 'right'])
@@ -69,7 +71,7 @@ describe('layoutsFor: Slidev base layouts', () => {
     expect(visible.filter(l => l.category === 'content').map(l => l.name).slice(0, 3)).toEqual(['default', 'two-cols', 'two-cols-header'])
   })
 
-  it('seriph cover warns about the online photo', async () => {
+  it.skipIf(!hasDevRuntime)('seriph cover warns about the online photo', async () => {
     const reg = createTemplateRegistry(registryOptions(fakeRuntime()))
     const seriph = by(await reg.layoutsFor(deck('seriph')), 'cover')
     expect(seriph?.fields.find(f => f.key === 'background')?.description).toContain('Internet')
