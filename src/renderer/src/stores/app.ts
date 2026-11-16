@@ -91,9 +91,25 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  /** A deck the system asked to open (double-clicked file, command line) before the app was ready for it. */
+  let waitingToOpen: string | undefined
+
   async function enterStart() {
     view.value = 'start'
     await refreshRecents()
+    if (waitingToOpen) {
+      const path = waitingToOpen
+      waitingToOpen = undefined
+      void openPath(path)
+    }
+  }
+
+  /** Open a deck on request from outside. During the first-run setup it waits until Slidev is installed. */
+  function requestOpen(path: string) {
+    if (view.value === 'boot' || view.value === 'setup')
+      waitingToOpen = path
+    else
+      void openPath(path)
   }
 
   async function refreshRecents() {
@@ -239,6 +255,7 @@ export const useAppStore = defineStore('app', () => {
     ensurePackages,
     answerPackagePrompt,
     openPath,
+    requestOpen,
     openDialog,
     createDeck,
     closeCurrent,

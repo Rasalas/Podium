@@ -290,6 +290,17 @@ export function createApi(options: { userDataDir: string, resourcesDir: string, 
       const snapshot = deck.session.snapshot()
       const baseName = basename(snapshot.bundlePath ?? snapshot.dir, '.podium')
       const defaultDir = app.getPath('documents')
+      // Tests export without the system's save dialog.
+      const fixedDir = process.env.PODIUM_EXPORT_DIR
+      if (fixedDir) {
+        const name = format === 'web' || format === 'png' ? `${baseName}-${format}` : `${baseName}.${EXPORT_FILTERS[format].extensions[0]}`
+        const target = join(fixedDir, name)
+        if (format === 'bundle') {
+          await deck.session.exportBundle(target)
+          return { path: target }
+        }
+        return exporter.run(snapshot, readyUrl(deckId), format, target, passwordOf(deckId))
+      }
       if (format === 'web' || format === 'png') {
         const result = await dialog.showOpenDialog({
           defaultPath: defaultDir,

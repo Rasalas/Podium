@@ -10,6 +10,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
+import { strFromU8, unzipSync } from 'fflate'
 // @ts-expect-error plain JS helper without types
 import { launchPodium } from './launch.mjs'
 
@@ -33,7 +34,7 @@ test.describe.configure({ mode: 'serial' })
 
 test.beforeAll(async () => {
   profile = mkdtempSync(join(tmpdir(), 'podium-e2e-'))
-  ;({ app, page } = await launchPodium({ profile }))
+  ;({ app, page } = await launchPodium({ profile, env: { PODIUM_EXPORT_DIR: join(profile, 'exports') } }))
   await page.getByRole('button', { name: /Neue Präsentation/ }).first().click({ timeout: 120_000 })
   await page.getByPlaceholder(/Jahresrückblick/).fill(TITLE)
   await page.getByRole('button', { name: 'Erstellen' }).click()
@@ -151,6 +152,27 @@ test('a change made outside the app shows up on the slide and can be undone', as
   expect(canUndo).toBe(true)
   await page.evaluate(id => window.podium!.undo(id), deckId)
   await expect.poll(markdown).toContain('# Getippter Titel')
+})
+
+test('PowerPoint export has one picture per slide and the speaker notes', async () => {
+  const slideCount = await page.evaluate(async id => (await window.podium!.getDeck(id)).slides.length, deckId)
+  const result = await page.evaluate(id => window.podium!.exportDeck(id, 'pptx'), deckId)
+  expect(result.path).toBe(join(profile, 'exports', `${TITLE}.pptx`))
+  const files = unzipSync(readFileSync(result.path!))
+  const names = Object.keys(files)
+  expect(names.filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n))).toHaveLength(slideCount)
+  expect(names.filter(n => /^ppt\/media\/.+\.png$/.test(n))).toHaveLength(slideCount)
+  // The note typed earlier in this file sits in PowerPoint's notes of that slide.
+  const notes = names.filter(n => /^ppt\/notesSlides\/notesSlide\d+\.xml$/.test(n)).map(n => strFromU8(files[n]))
+  expect(notes.some(xml => xml.includes('Notiz aus dem Test'))).toBe(true)
+})
+
+test('PDF export writes a PDF with one page per slide', async () => {
+  const slideCount = await page.evaluate(async id => (await window.podium!.getDeck(id)).slides.length, deckId)
+  const result = await page.evaluate(id => window.podium!.exportDeck(id, 'pdf'), deckId)
+  const pdf = readFileSync(result.path!)
+  expect(pdf.subarray(0, 5).toString()).toBe('%PDF-')
+  expect(pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g)?.length).toBe(slideCount)
 })
 
 test('the slide check finds no overflow in the template deck', async () => {

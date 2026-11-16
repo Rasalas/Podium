@@ -23,7 +23,7 @@ export function installEventHandlers(): () => void {
     api().on('update:state', (state) => {
       app.update = state
     }),
-    api().on('open-request', ({ path }) => void app.openPath(path)),
+    api().on('open-request', ({ path }) => app.requestOpen(path)),
     api().on('menu', ({ command }) => runCommand(command)),
   ]
   return () => off.forEach(fn => fn())

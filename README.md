@@ -10,7 +10,7 @@ Die aktuelle Version steht unter [Releases](https://github.com/Rasalas/Podium/re
 
 | System | Datei | Hinweis zum ersten Start |
 | --- | --- | --- |
-| macOS (Apple-Chip) | `Podium-…-arm64.dmg` | Die App ist nicht bei Apple registriert. macOS blockiert sie beim ersten Öffnen: Systemeinstellungen, "Datenschutz & Sicherheit", "Dennoch öffnen". |
+| macOS (Apple-Chip) | `Podium-…-arm64.dmg` | Öffnen und Podium in "Programme" ziehen. Die App ist signiert und von Apple beglaubigt. |
 | macOS (Intel) | `Podium-…-x64.dmg` | wie oben |
 | Windows | `Podium-Setup-….exe` | Windows warnt vor einer unbekannten App: "Weitere Informationen", dann "Trotzdem ausführen". |
 | Linux | `Podium-….AppImage` oder `podium_…_amd64.deb` | AppImage ausführbar machen und starten. |
@@ -75,6 +75,19 @@ git push --follow-tags
 ```
 
 Der Tag startet auf GitHub den Ablauf `Release`: Er baut die Installer für macOS, Windows und Linux und hängt sie an ein neues Release. Aus genau diesen Dateien holen sich die installierten Apps ihr Update.
+
+Die macOS-App wird dabei mit einem Developer-ID-Zertifikat signiert und von Apple beglaubigt. Die Zugangsdaten liegen als Geheimnisse im Repository (`MAC_CSC_LINK`, `MAC_CSC_KEY_PASSWORD`, `APPLE_API_KEY_P8`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER`). Fehlen sie, baut der Ablauf trotzdem, dann ohne Apple-Signatur.
+
+`MAC_CSC_LINK` ist die `.p12`-Datei als Base64. Das macOS der Build-Rechner liest nur das ältere Format mit 3DES und SHA-1. Eine mit OpenSSL 3 erzeugte Datei muss deshalb so umgepackt werden:
+
+```
+openssl pkcs12 -in original.p12 -noenc -out tmp.pem
+openssl pkcs12 -export -in tmp.pem -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg sha1 -out ci.p12
+rm tmp.pem
+base64 -w0 ci.p12 | gh secret set MAC_CSC_LINK
+```
+
+Über "Run workflow" lässt sich der Ablauf auch von Hand starten. Dann baut und prüft er nur und veröffentlicht nichts.
 
 Die Screenshots oben erzeugt `xvfb-run -a -s "-screen 0 1600x1000x24" node scripts/screenshots.mjs`.
 
