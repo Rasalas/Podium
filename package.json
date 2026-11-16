@@ -59,7 +59,7 @@
     "name": "Podium contributors"
   },
   "homepage": "https://github.com/Rasalas/Podium",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "desktopName": "podium.desktop",
   "repository": {
     "type": "git",

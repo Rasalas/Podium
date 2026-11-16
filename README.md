@@ -94,3 +94,7 @@ Die Screenshots oben erzeugt `xvfb-run -a -s "-screen 0 1600x1000x24" node scrip
 ## Aufbau
 
 Die Architektur, die Regeln für Beiträge und die Eigenheiten von Slidev 53 stehen in [AGENTS.md](AGENTS.md). Das Format für Vorlagen steht in [templates/README.md](templates/README.md).
+
+## Lizenz
+
+[MIT](LICENSE)
