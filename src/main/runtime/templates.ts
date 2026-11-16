@@ -9,7 +9,7 @@
  * would delete the templates.
  */
 import { existsSync } from 'node:fs'
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { hashDir, readJsonSync, replaceDir, writeFileAtomic } from './fsutil'
 
@@ -20,23 +20,30 @@ export interface BuiltinTemplate {
   source: string
 }
 
-export async function findTemplates(resourcesDir: string): Promise<BuiltinTemplate[]> {
-  const root = join(resourcesDir, 'templates')
-  let entries
-  try {
-    entries = await readdir(root, { withFileTypes: true })
-  }
-  catch {
-    return []
-  }
+/**
+ * Templates that ship with the app, plus those in `userDir` (templates the user added, see
+ * src/main/templates/import.ts). A shipped template wins over an added one of the same name.
+ */
+export async function findTemplates(resourcesDir: string, userDir?: string): Promise<BuiltinTemplate[]> {
   const found: BuiltinTemplate[] = []
-  for (const entry of entries) {
-    if (!entry.isDirectory())
+  for (const root of [join(resourcesDir, 'templates'), userDir]) {
+    if (!root)
       continue
-    const source = join(root, entry.name)
-    const pkg = readJsonSync<{ name?: string, version?: string }>(join(source, 'package.json'))
-    if (pkg?.name)
-      found.push({ name: pkg.name, version: pkg.version ?? '0.0.0', source })
+    let entries
+    try {
+      entries = await readdir(root, { withFileTypes: true })
+    }
+    catch {
+      continue
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory())
+        continue
+      const source = join(root, entry.name)
+      const pkg = readJsonSync<{ name?: string, version?: string }>(join(source, 'package.json'))
+      if (pkg?.name && !found.some(t => t.name === pkg.name))
+        found.push({ name: pkg.name, version: pkg.version ?? '0.0.0', source })
+    }
   }
   return found
 }
@@ -46,8 +53,8 @@ export function builtinDir(runtimeDir: string, name: string): string {
 }
 
 /** Copy templates that are missing or differ. Returns the names that were (re)copied. */
-export async function syncTemplates(resourcesDir: string, runtimeDir: string): Promise<string[]> {
-  const templates = await findTemplates(resourcesDir)
+export async function syncTemplates(resourcesDir: string, runtimeDir: string, userDir?: string): Promise<string[]> {
+  const templates = await findTemplates(resourcesDir, userDir)
   const changed: string[] = []
   for (const template of templates) {
     const installed = join(runtimeDir, 'node_modules', ...template.name.split('/'))
@@ -86,6 +93,18 @@ async function registerTemplates(runtimeDir: string, names: string[]): Promise<v
   const npmrc = existsSync(npmrcPath) ? await readFile(npmrcPath, 'utf8') : ''
   if (!/^\s*install-links\s*=\s*true\s*$/m.test(npmrc))
     await writeFileAtomic(npmrcPath, `${npmrc.replace(/^\s*install-links\s*=.*$/m, '').trimEnd()}\ninstall-links=true\n`.trimStart())
+}
+
+/** Take a template out of the runtime again: its copies and its entry in package.json. */
+export async function unregisterTemplate(runtimeDir: string, name: string): Promise<void> {
+  const pkgPath = join(runtimeDir, 'package.json')
+  const pkg = readJsonSync<{ dependencies?: Record<string, string> }>(pkgPath) ?? {}
+  if (pkg.dependencies?.[name] === `file:builtin/${name}`) {
+    const { [name]: _removed, ...rest } = pkg.dependencies
+    await writeFileAtomic(pkgPath, `${JSON.stringify({ ...pkg, dependencies: rest }, null, 2)}\n`)
+  }
+  await rm(builtinDir(runtimeDir, name), { recursive: true, force: true })
+  await rm(join(runtimeDir, 'node_modules', ...name.split('/')), { recursive: true, force: true })
 }
 
 function sortKeys(record: Record<string, string>): Record<string, string> {

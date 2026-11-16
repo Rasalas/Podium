@@ -46,6 +46,8 @@ export interface RuntimeOptions {
   resourcesDir: string
   /** Optional pre-installed runtime shipped with the app (resources/runtime-seed), copied instead of downloading. */
   seedDir?: string
+  /** Templates the user added (<userData>/templates). They are installed into the runtime like the shipped ones. */
+  userTemplatesDir?: string
   onProgress: ProgressSink
 }
 
@@ -63,6 +65,10 @@ export interface RuntimeManager {
   /** npm install into the runtime, scripts disabled. Rejects with a readable message on failure. */
   install: (names: string[]) => Promise<void>
   listInstalled: () => Promise<InstalledPackage[]>
+  /** Bring the templates from the user's store into the runtime and install what they depend on. */
+  syncUserTemplates: () => Promise<void>
+  /** Take a template the user added out of the runtime again. */
+  removeTemplate: (name: string) => Promise<void>
   /** Root folder of a package: in the deck's own workspace when `deckDir` is given, else installed in the runtime. */
   packageDir: (name: string, deckDir?: string) => string | undefined
   /** Run a script with the app's bundled Node (Electron in node mode). */

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Check, FolderOpen } from '@lucide/vue'
-import { computed, onMounted, ref } from 'vue'
+import { Check, FolderOpen, Plus } from '@lucide/vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { api } from '../api'
 import { t } from '../i18n'
 import { useAppStore } from '../stores/app'
@@ -17,6 +17,14 @@ const parentDir = ref(app.info?.defaultDeckDir ?? '')
 onMounted(async () => {
   const list = await app.loadTemplates()
   template.value = list.find(tpl => tpl.builtin)?.id ?? list[0]?.id ?? 'default'
+})
+
+// A template added from this dialog becomes the choice.
+watch(() => ui.lastAddedTemplate, (name) => {
+  const added = app.templates.find(tpl => tpl.packageName === name)
+  if (added)
+    template.value = added.id
+  ui.lastAddedTemplate = undefined
 })
 
 const effectiveTitle = computed(() => title.value.trim() || t('newDeck.title'))
@@ -79,6 +87,11 @@ function onTemplateKey(e: KeyboardEvent, index: number) {
             <span class="tpl-desc">{{ tpl.description }}</span>
             <span v-if="!tpl.installed" class="tpl-desc faint">{{ t('newDeck.needsDownload') }}</span>
           </button>
+          <button type="button" class="template add" data-testid="add-template" @click="ui.addTemplateOpen = true">
+            <div class="preview add-preview"><Plus :size="22" /></div>
+            <span class="tpl-label">{{ t('templates.addShort') }}</span>
+            <span class="tpl-desc">{{ t('templates.addHint') }}</span>
+          </button>
         </div>
       </div>
 
@@ -116,6 +129,7 @@ function onTemplateKey(e: KeyboardEvent, index: number) {
   text-align: left;
 }
 .template:hover { background: var(--bg-hover); }
+.add-preview { display: flex; align-items: center; justify-content: center; background: var(--bg-panel); color: var(--text-faint); border-style: dashed; }
 .template.selected { border-color: var(--accent); background: var(--accent-soft); }
 .preview {
   position: relative;

@@ -45,7 +45,7 @@ describe.skipIf(!hasDevRuntime)('runtime manager on a copy of .dev-runtime', () 
     scratch = scratchDir('runtime')
     runtimeDir = copyDevRuntime(join(scratch, 'runtime'))
     resourcesDir = makeResources(join(scratch, 'resources'))
-    manager = createRuntimeManager({ runtimeDir, resourcesDir, onProgress: e => events.push(e) })
+    manager = createRuntimeManager({ runtimeDir, resourcesDir, userTemplatesDir: join(scratch, 'user-templates'), onProgress: e => events.push(e) })
   }, 60_000)
 
   afterAll(() => {
@@ -167,6 +167,29 @@ describe.skipIf(!hasDevRuntime)('runtime manager on a copy of .dev-runtime', () 
       ['@iconify-json/tabler', 'icons', false, true],
       ['some-unknown-helper', 'other', false, false],
     ])
+  })
+
+  it('installs a template from the user\'s store, keeps it through npm runs and removes it again', async () => {
+    const source = join(scratch, 'user-templates', 'slidev-theme-eigen')
+    mkdirSync(join(source, 'layouts'), { recursive: true })
+    writeFileSync(join(source, 'package.json'), JSON.stringify({ name: 'slidev-theme-eigen', version: '1.0.0', keywords: ['slidev-theme'] }))
+    writeFileSync(join(source, 'layouts', 'cover.vue'), '<template><div>eigen</div></template>\n')
+    // No dependencies, so this must work without the registry.
+    await withEnv(OFFLINE, () => manager.syncUserTemplates())
+
+    const installed = join(runtimeDir, 'node_modules', 'slidev-theme-eigen')
+    expect(readFileSync(join(installed, 'layouts', 'cover.vue'), 'utf8')).toContain('eigen')
+    expect(JSON.parse(readFileSync(join(runtimeDir, 'package.json'), 'utf8')).dependencies['slidev-theme-eigen']).toBe('file:builtin/slidev-theme-eigen')
+    expect((await manager.listInstalled()).find(p => p.name === 'slidev-theme-eigen')).toMatchObject({ kind: 'theme', builtin: false })
+    await expect(manager.resolve('eigen', 'theme')).resolves.toMatchObject({ name: 'slidev-theme-eigen', installed: true })
+
+    // A shipped template cannot be taken out, an added one can.
+    await expect(manager.removeTemplate('slidev-theme-testklar')).rejects.toThrow(/Eingebaute/)
+    rmSync(source, { recursive: true, force: true })
+    await manager.removeTemplate('slidev-theme-eigen')
+    expect(existsSync(installed)).toBe(false)
+    expect(JSON.parse(readFileSync(join(runtimeDir, 'package.json'), 'utf8')).dependencies['slidev-theme-eigen']).toBeUndefined()
+    expect(existsSync(join(runtimeDir, 'node_modules', 'slidev-theme-testklar'))).toBe(true)
   })
 
   it('rejects invalid package names before running npm', async () => {

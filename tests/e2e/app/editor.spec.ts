@@ -139,8 +139,10 @@ test('the notes can be dragged taller and keep that height', async () => {
   await page.mouse.down()
   await page.mouse.move(grip.x + grip.width / 2, grip.y - 150, { steps: 5 })
   await page.mouse.up()
-  const after = (await panel.boundingBox())!.height
-  expect(after).toBeGreaterThan(before + 120)
+  // The height follows the pointer one render later.
+  const height = async () => (await panel.boundingBox())!.height
+  await expect.poll(height).toBeGreaterThan(before + 120)
+  const after = await height()
   expect(await page.evaluate(() => localStorage.getItem('podium.notesHeight'))).toBe(String(Math.round(after)))
 })
 

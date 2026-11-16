@@ -53,6 +53,9 @@ export const useUiStore = defineStore('ui', () => {
     }
   }
   const settingsOpen = ref(false)
+  const addTemplateOpen = ref(false)
+  /** Package name of the template added last, so the new-deck dialog can select it. */
+  const lastAddedTemplate = ref<string>()
   const newDeckOpen = ref(false)
   const checkOpen = ref(false)
   const remoteOpen = ref(false)
@@ -129,6 +132,8 @@ export const useUiStore = defineStore('ui', () => {
     notesHeight,
     setNotesHeight,
     settingsOpen,
+    addTemplateOpen,
+    lastAddedTemplate,
     newDeckOpen,
     checkOpen,
     remoteOpen,

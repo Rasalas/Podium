@@ -124,6 +124,20 @@ export interface TemplateInfo {
   colors?: { background: string, foreground: string, accent: string }
   /** PNG data URL or undefined. */
   preview?: string
+  /** The user added this template themselves (from an address or a folder). */
+  added?: boolean
+}
+
+/** A template the user added, with where it came from. */
+export interface AddedTemplate {
+  /** npm package name of the theme. */
+  name: string
+  label: string
+  version: string
+  /** Address or folder it was fetched from, for display. */
+  source: string
+  /** Epoch ms of the last fetch. */
+  fetchedAt: number
 }
 
 export type FieldType = 'text' | 'longtext' | 'image' | 'color' | 'boolean' | 'select' | 'number' | 'url'

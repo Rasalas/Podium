@@ -6,6 +6,7 @@
  */
 import type {
   AgentEvent,
+  AddedTemplate,
   AgentInfo,
   AppInfo,
   DeckOp,
@@ -65,6 +66,16 @@ export interface PodiumApi {
 
   // --- templates -----------------------------------------------------------
   listTemplates: () => Promise<TemplateInfo[]>
+  /**
+   * Add a template from a git address, a link to a zip file or a folder. `subdir` names the
+   * theme's folder inside the source when it is not the root. The template stays available
+   * for every new presentation. A template is program code: ask the user before calling this.
+   */
+  addTemplate: (source: string, subdir?: string) => Promise<AddedTemplate>
+  listAddedTemplates: () => Promise<AddedTemplate[]>
+  /** Fetch a template the user added again from where it came from. */
+  refreshTemplate: (name: string) => Promise<AddedTemplate>
+  removeTemplate: (name: string) => Promise<void>
   /** Layouts available to this deck (Slidev base + theme + addons + deck-local). */
   getLayouts: (deckId: string) => Promise<LayoutInfo[]>
 
@@ -168,7 +179,7 @@ export const API_METHODS: PodiumApiMethod[] = [
   'pickFolder', 'openExternal', 'showInFolder',
   'getUpdateState', 'checkForUpdates', 'installUpdate',
   'getRuntimeStatus', 'ensureRuntime', 'listInstalledPackages', 'resolvePackage', 'installPackages',
-  'listTemplates', 'getLayouts',
+  'listTemplates', 'getLayouts', 'addTemplate', 'listAddedTemplates', 'refreshTemplate', 'removeTemplate',
   'newDeck', 'openDeckDialog', 'openDeck', 'closeDeck', 'getDeck',
   'applyOp', 'undo', 'redo', 'importImage', 'importImageData',
   'startServer', 'restartServer', 'getServerStatus',

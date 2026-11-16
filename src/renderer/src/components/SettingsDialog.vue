@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DisplayInfo, Settings } from '@shared/types'
-import { computed, onMounted, ref } from 'vue'
+import type { AddedTemplate, DisplayInfo, Settings } from '@shared/types'
+import { computed, onMounted, ref, watch } from 'vue'
 import { api } from '../api'
 import { t } from '../i18n'
 import { useAppStore } from '../stores/app'
@@ -19,7 +19,36 @@ const PRESETS: Record<Exclude<Settings['agentPreset'], 'custom'>, string> = {
 
 onMounted(async () => {
   displays.value = (await ui.attempt(() => api().getDisplays())) ?? []
+  await loadAdded()
 })
+
+const added = ref<AddedTemplate[]>([])
+const busyTemplate = ref<string>()
+
+async function loadAdded() {
+  added.value = (await ui.attempt(() => api().listAddedTemplates())) ?? []
+}
+// The list follows templates added through the dialog on top of this one.
+watch(() => app.templates, loadAdded)
+
+async function refreshTemplate(name: string) {
+  busyTemplate.value = name
+  const result = await ui.attempt(() => api().refreshTemplate(name))
+  busyTemplate.value = undefined
+  if (result)
+    ui.toast({ kind: 'success', message: t('templates.refreshed', { name: result.label, version: result.version }) })
+  await app.loadTemplates()
+}
+
+async function removeTemplate(tpl: AddedTemplate) {
+  // eslint-disable-next-line no-alert
+  if (!window.confirm(t('templates.removeConfirm', { name: tpl.label })))
+    return
+  busyTemplate.value = tpl.name
+  await ui.attempt(() => api().removeTemplate(tpl.name))
+  busyTemplate.value = undefined
+  await app.loadTemplates()
+}
 
 const checked = ref(false)
 const updateBusy = computed(() => app.update?.status === 'checking' || app.update?.status === 'downloading')
@@ -99,6 +128,26 @@ function setPreset(preset: Settings['agentPreset']) {
         </select>
       </div>
 
+      <fieldset>
+        <legend class="label">{{ t('templates.own') }}</legend>
+        <ul v-if="added.length" class="added">
+          <li v-for="tpl in added" :key="tpl.name" data-testid="added-template">
+            <div class="added-text">
+              <span class="added-name">{{ tpl.label }}</span>
+              <span class="hint selectable" :title="tpl.source">{{ tpl.source }}</span>
+            </div>
+            <button class="btn outline" :disabled="busyTemplate !== undefined" @click="refreshTemplate(tpl.name)">
+              {{ busyTemplate === tpl.name ? t('templates.fetching') : t('templates.refresh') }}
+            </button>
+            <button class="btn outline" :disabled="busyTemplate !== undefined" :aria-label="t('templates.removeNamed', { name: tpl.label })" @click="removeTemplate(tpl)">
+              {{ t('common.remove') }}
+            </button>
+          </li>
+        </ul>
+        <p v-else class="hint">{{ t('templates.none') }}</p>
+        <button class="btn outline add-own" @click="ui.addTemplateOpen = true">{{ t('templates.addTitle') }} …</button>
+      </fieldset>
+
       <fieldset v-if="app.update && app.update.status !== 'off'">
         <legend class="label">{{ t('update.heading') }}</legend>
         <label class="check">
@@ -132,6 +181,12 @@ legend { padding: 0; }
 .mono { font-family: var(--font-mono); font-size: var(--fs-sm); }
 .hint { margin-top: 4px; }
 .version { margin-top: 4px; }
+.added { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.added li { display: flex; align-items: center; gap: 8px; }
+.added-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.added-name { font-weight: 600; }
+.added-text .hint { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.add-own { margin-top: 2px; }
 .update-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
 .update-row .hint { margin: 0; }
 </style>

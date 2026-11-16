@@ -6,6 +6,7 @@ import { api } from './api'
 import NewDeckDialog from './components/NewDeckDialog.vue'
 import PackageDialog from './components/PackageDialog.vue'
 import RemoteDialog from './components/RemoteDialog.vue'
+import AddTemplateDialog from './components/AddTemplateDialog.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
 import Toasts from './components/Toasts.vue'
 import Tooltip from './components/Tooltip.vue'
@@ -105,6 +106,7 @@ onBeforeUnmount(() => {
 
     <NewDeckDialog v-if="ui.newDeckOpen" @close="ui.newDeckOpen = false" />
     <SettingsDialog v-if="ui.settingsOpen" @close="ui.settingsOpen = false" />
+    <AddTemplateDialog v-if="ui.addTemplateOpen" @close="ui.addTemplateOpen = false" @added="ui.lastAddedTemplate = $event.name" />
     <PackageDialog />
     <RemoteDialog v-if="ui.remoteOpen && deck.deckId" :deck-id="deck.deckId" @close="ui.remoteOpen = false" />
 

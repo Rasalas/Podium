@@ -9,7 +9,7 @@ import { readJsonSync, writeFileAtomic } from './fsutil'
 import { workspacePackages } from './local'
 import { candidateNames, installName, isResolvableName, needsNoPackage, parseSpec } from './names'
 import { runNpm } from './npm'
-import { findTemplates, syncTemplates } from './templates'
+import { findTemplates, syncTemplates, unregisterTemplate } from './templates'
 import { isTrusted } from './trusted'
 
 export { isValidPackageName, parseSpec } from './names'
@@ -147,7 +147,7 @@ export function createRuntimeManager(options: RuntimeOptions): RuntimeManager {
       await writePackageJson()
 
       progress(scope, 'Kopiere die eingebauten Vorlagen …', { fraction: 0.2 })
-      await syncTemplates(options.resourcesDir, runtimeDir)
+      await syncTemplates(options.resourcesDir, runtimeDir, options.userTemplatesDir)
 
       if (!basePresent()) {
         progress(scope, 'Lade Slidev herunter. Das dauert beim ersten Start etwa eine Minute …', { fraction: 0.3 })
@@ -162,7 +162,7 @@ export function createRuntimeManager(options: RuntimeOptions): RuntimeManager {
         if (!basePresent())
           throw new Error('Slidev wurde nicht vollständig installiert.')
         // npm may have re-extracted the templates from builtin/; make sure node_modules has the full copy.
-        await syncTemplates(options.resourcesDir, runtimeDir)
+        await syncTemplates(options.resourcesDir, runtimeDir, options.userTemplatesDir)
       }
 
       progress(scope, 'Richte das Startprogramm ein …', { fraction: 0.95 })
@@ -297,7 +297,7 @@ export function createRuntimeManager(options: RuntimeOptions): RuntimeManager {
           ...NPM_INSTALL,
           ...todo,
         ])
-        await syncTemplates(options.resourcesDir, runtimeDir)
+        await syncTemplates(options.resourcesDir, runtimeDir, options.userTemplatesDir)
       }
       catch (error) {
         const message = error instanceof Error ? error.message : String(error)
@@ -305,6 +305,50 @@ export function createRuntimeManager(options: RuntimeOptions): RuntimeManager {
         throw new Error(message)
       }
       progress(scope, `Installiert: ${label}`, { done: true })
+    })
+  }
+
+  /** Does a template the user added name a package that is not in the runtime yet? */
+  async function userTemplatesNeedPackages(): Promise<boolean> {
+    const shipped = new Set((await findTemplates(options.resourcesDir)).map(t => t.name))
+    for (const template of await findTemplates(options.resourcesDir, options.userTemplatesDir)) {
+      if (shipped.has(template.name))
+        continue
+      const dependencies = readJsonSync<PackageJson>(join(template.source, 'package.json'))?.dependencies
+      if (Object.keys(dependencies ?? {}).some(name => !packageDir(name)))
+        return true
+    }
+    return false
+  }
+
+  function syncUserTemplates(): Promise<void> {
+    return enqueue(async () => {
+      if (!basePresent())
+        throw new Error('Slidev ist noch nicht eingerichtet.')
+      await syncTemplates(options.resourcesDir, runtimeDir, options.userTemplatesDir)
+      if (await userTemplatesNeedPackages()) {
+        progress('packages', 'Lade, was die Vorlage braucht …')
+        try {
+          // Without package names npm installs what package.json lists, including what the templates depend on.
+          await runNpm(spawnNode, runtimeDir, NPM_INSTALL.slice(0, -1))
+          // npm may have re-extracted the templates from builtin/; make sure node_modules has the full copy.
+          await syncTemplates(options.resourcesDir, runtimeDir, options.userTemplatesDir)
+        }
+        catch (error) {
+          const message = error instanceof Error ? error.message : String(error)
+          progress('packages', 'Die Vorlage konnte nicht vollständig eingerichtet werden.', { done: true, error: message })
+          throw new Error(message)
+        }
+        progress('packages', 'Vorlage eingerichtet.', { done: true })
+      }
+    })
+  }
+
+  function removeTemplate(name: string): Promise<void> {
+    return enqueue(async () => {
+      if ((await findTemplates(options.resourcesDir)).some(t => t.name === name))
+        throw new Error('Eingebaute Vorlagen lassen sich nicht entfernen.')
+      await unregisterTemplate(runtimeDir, name)
     })
   }
 
@@ -379,6 +423,8 @@ export function createRuntimeManager(options: RuntimeOptions): RuntimeManager {
     requirementsFor,
     install,
     listInstalled,
+    syncUserTemplates,
+    removeTemplate,
     packageDir,
     spawnNode,
   }

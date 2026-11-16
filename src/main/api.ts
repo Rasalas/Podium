@@ -1,5 +1,5 @@
 import type { PodiumApi, PodiumEvents } from '../shared/ipc'
-import type { DeckSnapshot, Locale, RemoteInfo, RemoteMode, ServerStatus } from '../shared/types'
+import type { AddedTemplate, DeckSnapshot, Locale, RemoteInfo, RemoteMode, ServerStatus } from '../shared/types'
 import type { DeckSession, SlidevServer } from './contracts'
 import { mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { basename, dirname, extname, join } from 'node:path'
@@ -12,7 +12,9 @@ import { newRemotePassword, remoteAddresses, remoteQrSvg, remoteUrl } from './re
 import { createRuntimeManager } from './runtime'
 import { createSlidevServer } from './server'
 import { createRecentStore, createSettingsStore } from './stores'
-import { createTemplateRegistry } from './templates'
+import type { TemplateSource, UserTemplate } from './templates/import'
+import { BUILTIN_TEMPLATE_PACKAGES, createTemplateRegistry } from './templates'
+import { createTemplateStore, parseTemplateSource } from './templates/import'
 import { createThumbnailer } from './thumbs'
 import { createUpdater } from './update'
 
@@ -48,9 +50,37 @@ export function createApi(options: { userDataDir: string, resourcesDir: string, 
     runtimeDir: process.env.PODIUM_RUNTIME_DIR || join(userDataDir, 'runtime'),
     resourcesDir,
     seedDir: join(resourcesDir, 'runtime-seed'),
+    userTemplatesDir: join(userDataDir, 'templates'),
     onProgress: event => emit('progress', event),
   })
   const templates = createTemplateRegistry({ runtime, resourcesDir, locale })
+  const templateStore = createTemplateStore(join(userDataDir, 'templates'), name => BUILTIN_TEMPLATE_PACKAGES.has(name))
+
+  const sourceLabel = (source: TemplateSource) => `${source.url.replace(/\.git$/, '')}${source.subdir ? ` (${source.subdir})` : ''}`
+  async function addedTemplates(): Promise<AddedTemplate[]> {
+    const known = await templates.list().catch(() => [])
+    return templateStore.list().map(entry => ({
+      name: entry.name,
+      label: known.find(t => t.packageName === entry.name)?.label ?? entry.name,
+      version: entry.version,
+      source: sourceLabel(entry.source),
+      fetchedAt: entry.fetchedAt,
+    }))
+  }
+  /** Put a fetched template into the runtime. A template that cannot be set up does not stay behind half-installed. */
+  async function installAdded(entry: UserTemplate, isNew: boolean): Promise<AddedTemplate> {
+    try {
+      await runtime.syncUserTemplates()
+    }
+    catch (error) {
+      if (isNew) {
+        templateStore.remove(entry.name)
+        await runtime.removeTemplate(entry.name).catch(() => {})
+      }
+      throw error
+    }
+    return (await addedTemplates()).find(t => t.name === entry.name)!
+  }
   const thumbnailer = createThumbnailer({
     onThumbnail(event) {
       emit('thumbnail', event)
@@ -216,7 +246,21 @@ export function createApi(options: { userDataDir: string, resourcesDir: string, 
     resolvePackage: (raw, kind) => runtime.resolve(raw, kind),
     installPackages: names => runtime.install(names),
 
-    listTemplates: () => templates.list(),
+    async listTemplates() {
+      const added = new Set(templateStore.list().map(t => t.name))
+      return (await templates.list()).map(t => added.has(t.packageName) ? { ...t, added: true } : t)
+    },
+    async addTemplate(source, subdir) {
+      const parsed = parseTemplateSource(source, subdir)
+      const isNew = !templateStore.list().some(t => sourceLabel(t.source) === sourceLabel(parsed))
+      return installAdded(await templateStore.add(parsed), isNew)
+    },
+    listAddedTemplates: () => addedTemplates(),
+    refreshTemplate: async name => installAdded(await templateStore.refresh(name), false),
+    async removeTemplate(name) {
+      templateStore.remove(name)
+      await runtime.removeTemplate(name)
+    },
     getLayouts: deckId => templates.layoutsFor(need(deckId).session.snapshot()),
 
     async newDeck(newOptions) {

@@ -38,6 +38,7 @@ In den Einstellungen lässt sich das abschalten, und es gibt einen Knopf "Nach U
   ![Layout wählen](docs/screenshots/layouts.png)
 
 - **Vorhandene Slidev-Vorträge.** Ein Ordner mit `slides.md` lässt sich direkt öffnen. Liegt die Vorlage im Vortragsordner selbst (als Workspace-Paket, etwa unter `packages/`), nimmt Podium sie von dort.
+- **Eigene Vorlagen.** Unter "Neue Präsentation" oder in den Einstellungen fügst du eine Vorlage hinzu: aus der Adresse eines Repositorys bei GitHub oder GitLab (auch die Adresse eines Unterordners), aus einem Zip-Link oder aus einem Ordner. Sie steht danach bei jeder neuen Präsentation zur Auswahl und lässt sich aktualisieren und entfernen. Für private Repositorys muss Git auf dem Rechner angemeldet sein.
 - **Pakete ohne Terminal.** Slidev liegt einmal im Benutzerordner, Decks brauchen kein `node_modules`. Nennt ein Deck ein Theme oder Addon, lädt Podium es nach. Pakete von der geprüften Liste installiert es still, bei allen anderen fragt es.
 - **Arbeiten mit Agenten.** Jedes neue Deck bekommt eine `AGENTS.md`. Podium zeigt Änderungen von außen sofort an und nimmt sie in den Rückgängig-Verlauf auf. Solange ein Deck offen ist, läuft Slidevs MCP-Server.
 - **Prüfen und Exportieren.** Die Prüfung meldet Folien, bei denen Inhalt über den Rand ragt. Export als PDF, PowerPoint mit Folien als Bildern, PNG, Webseite oder als einzelne `.podium`-Datei.

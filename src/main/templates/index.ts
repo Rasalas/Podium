@@ -53,6 +53,9 @@ const BUILTIN: BuiltinTemplate[] = [
   },
 ]
 
+/** Package names of the templates Podium always offers. A template the user adds cannot take one of them. */
+export const BUILTIN_TEMPLATE_PACKAGES: ReadonlySet<string> = new Set(BUILTIN.map(b => b.packageName))
+
 const isPathStyle = (name: string) => name.startsWith('.') || name.startsWith('/') || isAbsolute(name)
 
 async function readJson<T>(file: string): Promise<T | undefined> {

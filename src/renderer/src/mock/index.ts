@@ -328,6 +328,10 @@ export function createMockBridge(): PodiumBridge & { __mock: true } {
     },
 
     listTemplates: async () => templates.map(t => ({ ...t, installed: installed.has(t.packageName) })),
+    addTemplate: async source => ({ name: 'slidev-theme-beispiel', label: 'Beispiel', version: '1.0.0', source, fetchedAt: Date.now() }),
+    listAddedTemplates: async () => [],
+    refreshTemplate: async name => ({ name, label: name, version: '1.0.1', source: 'https://example.org/vorlage', fetchedAt: Date.now() }),
+    removeTemplate: async () => {},
     async getLayouts(deckId) {
       need(deckId)
       return structuredClone(MOCK_LAYOUTS) as LayoutInfo[]
